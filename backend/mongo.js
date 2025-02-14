@@ -6,10 +6,48 @@ if(process.argv.length < 3) {
 }
 
 const password = process.argv[2];
-const url = `mongodb+srv://arenasesteban:${password}@arenasesteban-cluster.w9r5d.mongodb.net/phonebookApp?retryWrites=true&w=majority`;
+
+const url = `mongodb+srv://arenasesteban:${password}@arenasesteban-cluster.w9r5d.mongodb.net/?retryWrites=true&w=majority`;
 
 mongoose.set('strictQuery', false);
 
+mongoose.connect(url).then(() => {
+    const personSchema = new mongoose.Schema({
+        name: String,
+        number: String
+    });
+
+    const Person = mongoose.model('Person', personSchema);
+
+    if (process.argv.length === 3) {
+        Person.find({}).then(result => {
+            result.forEach(person => {
+                console.log(`${person.name} ${person.number}`);
+            });
+
+            mongoose.connection.close();
+        }).catch(error => {
+            console.log('Error fetching persons:', error);
+        });
+    } else if (process.argv === 5) {
+        const person = new Person({
+            name: process.argv[3],
+            number: process.argv[4]
+        });
+
+        person.save().then(() => {
+            console.log(`Added ${person.name} number ${person.number} to phonebook`);
+
+            mongoose.connection.close();
+        }).catch(error => {
+            console.log('Error saving person:', error);
+        });
+    }
+}).catch(error => {
+    console.log('Error connecting to MongoDB:', error);
+});
+
+/* 
 const main = async () => {
     try {
         await mongoose.connect(url);
@@ -44,4 +82,4 @@ const main = async () => {
     }
 }
 
-main();
+main(); */
