@@ -29,33 +29,32 @@ const App = () => {
         e.preventDefault();
         const personObject =  { name: newName, number: newNumber }
 
-        if(!persons.some(person => person.name === newName)) {
-            const response = await personService.create(personObject);
-            setPersons([...persons, response]);
-            setMessage(`Added ${newName}`);
-            setMessage({ type: 'success', content: `Added ${newName}` });
-            setTimeout(() => setMessage({ type: null, content: null}), 5000);
-        } else {
-            try {
+        try {
+            if(!persons.some(person => person.name === newName)) {
+                const response = await personService.create(personObject);
+                setPersons([...persons, response]);
+                setMessage(`Added ${newName}`);
+                setMessage({ type: 'success', content: `Added ${newName}` });
+                setTimeout(() => setMessage({ type: null, content: null}), 5000);
+            } else {
                 const confirm = window.confirm(`${newName} is alreay added to phonebook, replace the old number with new one?`);
-        
-                if(confirm) {
-                    const id = persons.find(person => person.name === newName).id;
-                    const response = await personService.update(id, personObject);
-                    setPersons(persons.map(person => person.id !== id ? person : response));
-                    setMessage({ type: 'success', content: `Updated ${newName}` });
-                    setTimeout(() => setMessage({ type: null, content: null}), 5000);
-                }
-            } catch {
-                setMessage({ type: 'error', content: `Information of this contact has already been removed from server` });
-                setTimeout(() => setMessage({ type: null, content: null }), 5000);
-            }
+            
+                    if(confirm) {
+                        const id = persons.find(person => person.name === newName).id;
+                        const response = await personService.update(id, personObject);
+                        setPersons(persons.filter(person => person.id !== id ? person : response));
+                        setMessage({ type: 'success', content: `Updated ${newName}` });
+                        setTimeout(() => setMessage({ type: null, content: null}), 5000);
+                    }
+            }       
+        } catch(error) {
+            setMessage({ type: 'error', content: error.response.data.error });
+            setTimeout(() => setMessage({ type: null, content: null }), 5000);
         }
+
         setNewName('');
         setNewNumber('');
     }
-
-    console.log(persons);
     
     const personsToShow = !search ? persons : persons.filter(person => person.name.toLowerCase().includes(search));
 
@@ -67,9 +66,11 @@ const App = () => {
             if (confirm) {
                 await personService.remove(id);
                 setPersons(persons.filter(person => person.id !== id));
+                setMessage({ type: 'success', content: `Deleted ${newName}` });
+                setTimeout(() => setMessage({ type: null, content: null}), 5000);
             }
-        } catch {
-            setMessage({ type: 'error', content: `Information of this contact has already been removed from server` });
+        } catch(error) {
+            setMessage({ type: 'error', content: error.response.data.error });
             setTimeout(() => setMessage({ type: null, content: null }), 5000);
         }
     };
