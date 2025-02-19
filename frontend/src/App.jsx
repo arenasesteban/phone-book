@@ -33,7 +33,6 @@ const App = () => {
             if(!persons.some(person => person.name === newName)) {
                 const response = await personService.create(personObject);
                 setPersons([...persons, response]);
-                setMessage(`Added ${newName}`);
                 setMessage({ type: 'success', content: `Added ${newName}` });
                 setTimeout(() => setMessage({ type: null, content: null}), 5000);
             } else {
@@ -42,7 +41,9 @@ const App = () => {
                     if(confirm) {
                         const id = persons.find(person => person.name === newName).id;
                         const response = await personService.update(id, personObject);
-                        setPersons(persons.filter(person => person.id !== id ? person : response));
+                        console.log(response);
+                        setPersons(persons.map(person => person.id !== id ? person : response));
+                        console.log(persons);
                         setMessage({ type: 'success', content: `Updated ${newName}` });
                         setTimeout(() => setMessage({ type: null, content: null}), 5000);
                     }
@@ -66,7 +67,7 @@ const App = () => {
             if (confirm) {
                 await personService.remove(id);
                 setPersons(persons.filter(person => person.id !== id));
-                setMessage({ type: 'success', content: `Deleted ${newName}` });
+                setMessage({ type: 'success', content: `Deleted ${person.name}` });
                 setTimeout(() => setMessage({ type: null, content: null}), 5000);
             }
         } catch(error) {

@@ -48,7 +48,7 @@ app.delete('/api/persons/:id', (req, res, next) => {
         .catch(error => next(error));
 });
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
     const body = req.body;
 
     /*     
@@ -71,9 +71,11 @@ app.post('/api/persons', (req, res) => {
         number: body.number
     });
 
-    person.save().then(savedPerson => {
-        res.json(savedPerson);
-    });
+    person.save()
+        .then(savedPerson => {
+            res.json(savedPerson);
+        })
+        .catch(error => next(error));
 });
 
 app.put('/api/persons/:id', (req, res, next) => {
@@ -84,11 +86,20 @@ app.put('/api/persons/:id', (req, res, next) => {
         number: body.number
     };
 
-    Person.findByIdAndUpdate(req.params.id, person, { new: true})
+    Person.findByIdAndUpdate(req.params.id, person, { new: true, runValidators: true, context: 'query' })
         .then(updatePerson => {
-            res.json(updatePerson);
+            if(updatePerson) {
+                res.json(updatePerson);
+            } else {
+                const error = new Error('Information of this contact has already been removed from server');
+                error.name = 'NotFoundError';
+                throw error;
+            }
         })
-        .catch(error => next(error));
+        .catch(error => {
+            console.log('Error:', error);
+            next(error);
+        });
 });
 
 const unknownEndpoint = (req, res) => {
@@ -101,7 +112,11 @@ const errorHandler = (error, req, res, next) => {
     console.error(error.message);
 
     if(error.name === 'CastError') {
-        return res.status(400).send({ error: 'malformatted id' });
+        return res.status(400).send({ error: 'Malformatted id' });
+    } else if(error.name === 'ValidationError') {
+        return res.status(400).json({ error: error.message });
+    } else if(error.name === 'NotFoundError') {
+        return res.status(404).json({ error: error.message });
     }
 
     next(error);
